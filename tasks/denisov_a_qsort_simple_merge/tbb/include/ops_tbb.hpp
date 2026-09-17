@@ -16,8 +16,8 @@ class DenisovAQsortSimpleMergeTBB : public BaseTask {
   explicit DenisovAQsortSimpleMergeTBB(const InType &in);
 
  private:
-  static int HoarePartition(std::vector<int> &values, int left, int right);
-  static void HoareSort(std::vector<int> &values, int left, int right);
+  static int HoarePartition(std::vector<int> &data, int left, int right);
+  static void HoareSort(std::vector<int> &data, int left, int right);
   static void SimpleMerge(const std::vector<int> &source, std::vector<int> &destination, size_t left, size_t middle,
                           size_t right);
   static void SortBlockIfNeeded(std::vector<int> &data, size_t size, size_t block_index);
