@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <vector>
 
-#include "task/include/task.hpp"
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
+#include "task/include/task.hpp"
 
 namespace denisov_a_qsort_simple_merge {
 

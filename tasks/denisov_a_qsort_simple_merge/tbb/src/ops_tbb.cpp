@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <utility>
+#include <random>
 #include <vector>
 
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
@@ -22,19 +23,20 @@ DenisovAQsortSimpleMergeTBB::DenisovAQsortSimpleMergeTBB(const InType &in) {
   GetOutput() = {};
 }
 
-int DenisovAQsortSimpleMergeTBB::HoarePartition(std::vector<int> &values, int left, int right) {
-  const int pivot = values[left + ((right - left) / 2)];
-  int i = left - 1;
-  int j = right + 1;
+int DenisovAQsortSimpleMergeTBB::HoarePartition(std::vector<int> &data, int left, int right) {
+  static thread_local std::mt19937 gen(std::random_device{}());
+  std::uniform_int_distribution<int> dist(left, right);
+  int pivot = data[dist(gen)];
+
+  int i = left;
+  int j = right;
 
   while (true) {
-    ++i;
-    while (values[i] < pivot) {
+    while (data[i] < pivot) {
       ++i;
     }
 
-    --j;
-    while (values[j] > pivot) {
+    while (data[j] > pivot) {
       --j;
     }
 
@@ -42,12 +44,14 @@ int DenisovAQsortSimpleMergeTBB::HoarePartition(std::vector<int> &values, int le
       return j;
     }
 
-    std::swap(values[i], values[j]);
+    std::swap(data[i], data[j]);
+    ++i;
+    --j;
   }
 }
 
-void DenisovAQsortSimpleMergeTBB::HoareSort(std::vector<int> &values, int left, int right) {
-  if (left >= right || static_cast<size_t>(left) >= values.size() || static_cast<size_t>(right) >= values.size()) {
+void DenisovAQsortSimpleMergeTBB::HoareSort(std::vector<int> &data, int left, int right) {
+  if (left >= right || static_cast<size_t>(left) >= data.size() || static_cast<size_t>(right) >= data.size()) {
     return;
   }
 
@@ -62,11 +66,11 @@ void DenisovAQsortSimpleMergeTBB::HoareSort(std::vector<int> &values, int left, 
       continue;
     }
 
-    if (current_left < 0 || static_cast<size_t>(current_right) >= values.size()) {
+    if (current_left < 0 || static_cast<size_t>(current_right) >= data.size()) {
       continue;
     }
 
-    const int partition_index = HoarePartition(values, current_left, current_right);
+    const int partition_index = HoarePartition(data, current_left, current_right);
     if (partition_index < current_left || partition_index > current_right) {
       continue;
     }
@@ -187,19 +191,12 @@ bool DenisovAQsortSimpleMergeTBB::RunImpl() {
     MergePass(data_, size, merge_width);
   }
 
-  if (std::ranges::is_sorted(data_)) {
-    GetOutput() = data_;
-    return true;
-  }
-
-  return false;
+  GetOutput() = data_;
+  return true;
 }
 
 bool DenisovAQsortSimpleMergeTBB::PostProcessingImpl() {
-  if (GetOutput().empty()) {
-    return false;
-  }
-  return std::ranges::is_sorted(GetOutput());
+  return !GetOutput().empty();
 }
 
 }  // namespace denisov_a_qsort_simple_merge

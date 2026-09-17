@@ -4,11 +4,11 @@
 #include <cstddef>
 #include <random>
 
-#include "util/include/perf_test_util.hpp"
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
 #include "denisov_a_qsort_simple_merge/omp/include/ops_omp.hpp"
 #include "denisov_a_qsort_simple_merge/seq/include/ops_seq.hpp"
 #include "denisov_a_qsort_simple_merge/tbb/include/ops_tbb.hpp"
+#include "util/include/perf_test_util.hpp"
 
 namespace denisov_a_qsort_simple_merge {
 
@@ -29,9 +29,7 @@ class DenisovARunPerfTestsThreads : public ppc::util::BaseRunPerfTests<InType, O
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return output_data.size() == input_data_.size() &&
-             std::adjacent_find(output_data.begin(), output_data.end(),
-                      [](const int &a, const int &b) { return a > b; }) == output_data.end();
+    return output_data.size() == input_data_.size() && std::ranges::is_sorted(output_data);
   }
 
   InType GetTestInputData() final {

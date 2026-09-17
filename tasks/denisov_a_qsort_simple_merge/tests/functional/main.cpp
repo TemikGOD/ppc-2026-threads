@@ -8,13 +8,13 @@
 #include <tuple>
 #include <vector>
 
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
 #include "denisov_a_qsort_simple_merge/omp/include/ops_omp.hpp"
 #include "denisov_a_qsort_simple_merge/seq/include/ops_seq.hpp"
-//#include "denisov_a_qsort_simple_merge/stl/include/ops_stl.hpp"
 #include "denisov_a_qsort_simple_merge/tbb/include/ops_tbb.hpp"
+#include "util/include/func_test_util.hpp"
+#include "util/include/util.hpp"
+//#include "denisov_a_qsort_simple_merge/stl/include/ops_stl.hpp"
 
 namespace denisov_a_qsort_simple_merge {
 
@@ -44,7 +44,7 @@ class DenisovARunFuncTestsThreads : public ppc::util::BaseRunFuncTests<InType, O
   }
 
   [[nodiscard]] static bool IsSorted(const OutType &data) {
-    return std::is_sorted(data.begin(), data.end());
+    return std::ranges::is_sorted(data);
   }
 
   InType GetTestInputData() final {

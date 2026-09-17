@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <stack>
 #include <utility>
+#include <random>
 #include <vector>
 
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
@@ -18,19 +19,20 @@ DenisovAQsortSimpleMergeOMP::DenisovAQsortSimpleMergeOMP(const InType &in) {
   GetOutput().clear();
 }
 
-int DenisovAQsortSimpleMergeOMP::HoarePartition(std::vector<int> &values, int left, int right) {
-  const int pivot = values[left + ((right - left) / 2)];
-  int i = left - 1;
-  int j = right + 1;
+int DenisovAQsortSimpleMergeOMP::HoarePartition(std::vector<int> &data, int left, int right) {
+  static thread_local std::mt19937 gen(std::random_device{}());
+  std::uniform_int_distribution<int> dist(left, right);
+  int pivot = data[dist(gen)];
+
+  int i = left;
+  int j = right;
 
   while (true) {
-    ++i;
-    while (values[i] < pivot) {
+    while (data[i] < pivot) {
       ++i;
     }
 
-    --j;
-    while (values[j] > pivot) {
+    while (data[j] > pivot) {
       --j;
     }
 
@@ -38,35 +40,36 @@ int DenisovAQsortSimpleMergeOMP::HoarePartition(std::vector<int> &values, int le
       return j;
     }
 
-    std::swap(values[i], values[j]);
+    std::swap(data[i], data[j]);
+    ++i;
+    --j;
   }
 }
 
-void DenisovAQsortSimpleMergeOMP::HoareSort(std::vector<int> &values, int left, int right) {
+void DenisovAQsortSimpleMergeOMP::HoareSort(std::vector<int> &data, int left, int right) {
   std::stack<std::pair<int, int>> ranges;
   ranges.emplace(left, right);
 
   while (!ranges.empty()) {
-    auto [current_left, current_right] = ranges.top();
+    auto [l, r] = ranges.top();
     ranges.pop();
 
-    if (current_left >= current_right) {
+    if (l >= r) {
       continue;
     }
 
-    const int partition_index = HoarePartition(values, current_left, current_right);
-
-    if ((partition_index - current_left) > (current_right - (partition_index + 1))) {
-      ranges.emplace(current_left, partition_index);
-      ranges.emplace(partition_index + 1, current_right);
+    int pivot_index = HoarePartition(data, l, r);
+    if ((pivot_index - l) > (r - (pivot_index + 1))) {
+      ranges.emplace(l, pivot_index);
+      ranges.emplace(pivot_index + 1, r);
     } else {
-      ranges.emplace(partition_index + 1, current_right);
-      ranges.emplace(current_left, partition_index);
+      ranges.emplace(pivot_index + 1, r);
+      ranges.emplace(l, pivot_index);
     }
   }
 }
 
-void DenisovAQsortSimpleMergeOMP::SimpleMerge(std::vector<int> &values, int left, int mid, int right) {
+void DenisovAQsortSimpleMergeOMP::SimpleMerge(std::vector<int> &data, int left, int mid, int right) {
   std::vector<int> merged;
   const int merged_size = (right - left) + 1;
   merged.reserve(static_cast<std::size_t>(merged_size));
@@ -75,23 +78,23 @@ void DenisovAQsortSimpleMergeOMP::SimpleMerge(std::vector<int> &values, int left
   int right_index = mid + 1;
 
   while (left_index <= mid && right_index <= right) {
-    if (values[left_index] <= values[right_index]) {
-      merged.push_back(values[left_index++]);
+    if (data[left_index] <= data[right_index]) {
+      merged.push_back(data[left_index++]);
     } else {
-      merged.push_back(values[right_index++]);
+      merged.push_back(data[right_index++]);
     }
   }
 
   while (left_index <= mid) {
-    merged.push_back(values[left_index++]);
+    merged.push_back(data[left_index++]);
   }
 
   while (right_index <= right) {
-    merged.push_back(values[right_index++]);
+    merged.push_back(data[right_index++]);
   }
 
   for (std::size_t idx = 0; idx < merged.size(); ++idx) {
-    values[static_cast<std::size_t>(left) + idx] = merged[idx];
+    data[static_cast<std::size_t>(left) + idx] = merged[idx];
   }
 }
 
@@ -105,8 +108,8 @@ bool DenisovAQsortSimpleMergeOMP::PreProcessingImpl() {
 }
 
 bool DenisovAQsortSimpleMergeOMP::RunImpl() {
-  std::vector<int> &values = GetOutput();
-  const int n = static_cast<int>(values.size());
+  std::vector<int> &data = GetOutput();
+  const int n = static_cast<int>(data.size());
   if (n <= 1) {
     return true;
   }
@@ -115,8 +118,8 @@ bool DenisovAQsortSimpleMergeOMP::RunImpl() {
   const int chunks = std::min(max_threads, n);
 
   if (chunks == 1) {
-    HoareSort(values, 0, n - 1);
-    return std::ranges::is_sorted(values);
+    HoareSort(data, 0, n - 1);
+    return true;
   }
 
   std::vector<int> borders(static_cast<std::size_t>(chunks + 1));
@@ -124,26 +127,38 @@ bool DenisovAQsortSimpleMergeOMP::RunImpl() {
     borders[static_cast<std::size_t>(i)] = (i * n) / chunks;
   }
 
-#pragma omp parallel for default(none) shared(values, borders, chunks)
+#pragma omp parallel for default(none) shared(data, borders, chunks)
   for (int chunk = 0; chunk < chunks; ++chunk) {
     const int left = borders[static_cast<std::size_t>(chunk)];
     const int right = borders[static_cast<std::size_t>(chunk) + 1] - 1;
     if (left < right) {
-      HoareSort(values, left, right);
+      HoareSort(data, left, right);
     }
   }
 
-  for (int i = 0; i < chunks - 1; ++i) {
-    const int mid = borders[static_cast<std::size_t>(i) + 1] - 1;
-    const int right = borders[static_cast<std::size_t>(i) + 2] - 1;
-    SimpleMerge(values, 0, mid, right);
+  for (int width = 1; width < chunks; width *= 2) {
+    const int merge_count = (chunks + (2 * width) - 1) / (2 * width);
+
+#pragma omp parallel for default(none) shared(data, borders, chunks, width, merge_count)
+    for (int merge = 0; merge < merge_count; ++merge) {
+      const int left_chunk = 2 * merge * width;
+      const int mid_chunk = left_chunk + width;
+      const int right_chunk = std::min(left_chunk + (2 * width), chunks);
+
+      if (mid_chunk < right_chunk) {
+        const int left = borders[static_cast<std::size_t>(left_chunk)];
+        const int mid = borders[static_cast<std::size_t>(mid_chunk)] - 1;
+        const int right = borders[static_cast<std::size_t>(right_chunk)] - 1;
+        SimpleMerge(data, left, mid, right);
+      }
+    }
   }
 
-  return std::ranges::is_sorted(values);
+  return true;
 }
 
 bool DenisovAQsortSimpleMergeOMP::PostProcessingImpl() {
-  return !GetOutput().empty() && std::ranges::is_sorted(GetOutput());
+    return !GetOutput().empty();
 }
 
 }  // namespace denisov_a_qsort_simple_merge

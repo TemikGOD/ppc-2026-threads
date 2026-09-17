@@ -1,10 +1,10 @@
 #include "denisov_a_qsort_simple_merge/seq/include/ops_seq.hpp"
 
 #include <cstddef>
+#include <random>
 #include <stack>
 #include <utility>
 #include <vector>
-#include <random>
 
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
 
@@ -115,9 +115,9 @@ bool DenisovAQsortSimpleMergeSEQ::RunImpl() {
     return true;
   }
 
-  std::ptrdiff_t mid = data.size() / 2;
-  std::vector<int> left(data.begin(), data.begin() + mid);
-  std::vector<int> right(data.begin() + mid, data.end());
+  size_t mid = data.size() / 2;
+  std::vector<int> left(data.begin(), data.begin() + static_cast<std::ptrdiff_t>(mid));
+  std::vector<int> right(data.begin() + static_cast<std::ptrdiff_t>(mid), data.end());
 
   if (left.size() > 1) {
     HoareSort(left, 0, static_cast<int>(left.size()) - 1);
