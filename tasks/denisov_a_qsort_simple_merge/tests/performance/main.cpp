@@ -6,10 +6,9 @@
 
 #include "util/include/perf_test_util.hpp"
 #include "denisov_a_qsort_simple_merge/common/include/common.hpp"
-//#include "denisov_a_qsort_simple_merge/omp/include/ops_omp.hpp"
+#include "denisov_a_qsort_simple_merge/omp/include/ops_omp.hpp"
 #include "denisov_a_qsort_simple_merge/seq/include/ops_seq.hpp"
-//#include "denisov_a_qsort_simple_merge/stl/include/ops_stl.hpp"
-//#include "denisov_a_qsort_simple_merge/tbb/include/ops_tbb.hpp"
+#include "denisov_a_qsort_simple_merge/tbb/include/ops_tbb.hpp"
 
 namespace denisov_a_qsort_simple_merge {
 
@@ -47,8 +46,8 @@ TEST_P(DenisovARunPerfTestsThreads, RunPerfModes) {
 namespace {
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, YushkovaPHoareSortingSimpleMergingSEQ, YushkovaPHoareSortingSimpleMergingOMP,
-                                YushkovaPHoareSortingSimpleMergingSTL, YushkovaPHoareSortingSimpleMergingTBB>(
+    ppc::util::MakeAllPerfTasks<InType, DenisovAQsortSimpleMergeSEQ, DenisovAQsortSimpleMergeOMP,
+                                DenisovAQsortSimpleMergeTBB>(
         PPC_SETTINGS_denisov_a_qsort_simple_merge);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);

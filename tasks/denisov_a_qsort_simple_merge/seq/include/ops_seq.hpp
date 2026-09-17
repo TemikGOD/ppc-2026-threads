@@ -15,14 +15,14 @@ class DenisovAQsortSimpleMergeSEQ : public BaseTask {
   explicit DenisovAQsortSimpleMergeSEQ(const InType &in);
 
  private:
+  static void HoareSort(std::vector<int> &data, int left, int right);
+  static int HoarePartition(std::vector<int> &data, int left, int right);
+  static std::vector<int> SimpleMerge(const std::vector<int> &left, const std::vector<int> &right);
+
   bool ValidationImpl() override;
   bool PreProcessingImpl() override;
   bool RunImpl() override;
   bool PostProcessingImpl() override;
-
-  static void HoareSort(std::vector<int> &data, int left, int right);
-  static int HoarePartition(std::vector<int> &data, int left, int right);
-  static std::vector<int> SimpleMerge(const std::vector<int> &left, const std::vector<int> &right);
 };
 
 }  // namespace denisov_a_qsort_simple_merge
